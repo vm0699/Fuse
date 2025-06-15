@@ -1,0 +1,82 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    ext {
+        // Core versions (aligned with React Native 0.72 requirements)
+        agpVersion = "8.1.2"               // Android Gradle Plugin
+        kotlinVersion = "1.7.22"           // Kotlin version
+        gradleVersion = "8.1.3"            // Gradle wrapper version
+        
+        // SDK versions
+        buildToolsVersion = "33.0.0"
+        minSdkVersion = 24
+        compileSdkVersion = 33
+        targetSdkVersion = 33
+        
+        // Dependency versions
+        reactNativeGradlePluginVersion = "0.72.10"
+    }
+
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+
+    dependencies {
+        classpath("com.android.tools.build:gradle:${agpVersion}")
+        classpath("com.facebook.react:react-native-gradle-plugin:${reactNativeGradlePluginVersion}")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${kotlinVersion}")
+    }
+}
+
+// React Native Android dir detection
+def reactNativeAndroidDir = new File(
+    providers.exec {
+        workingDir(rootDir)
+        commandLine("node", "--print", "require.resolve('react-native/package.json')")
+    }.standardOutput.asText.get().trim(),
+    "../android"
+)
+
+allprojects {
+    repositories {
+        maven {
+            url(reactNativeAndroidDir)
+        }
+        google()
+        mavenCentral()
+        maven { url 'https://www.jitpack.io' }
+    }
+}
+
+apply plugin: "expo-root-project"
+apply plugin: "com.facebook.react.rootproject"
+
+// Configure all subprojects
+subprojects {
+    afterEvaluate { project ->
+        if (project.hasProperty("android")) {
+            android {
+                compileSdkVersion rootProject.ext.compileSdkVersion
+                buildToolsVersion rootProject.ext.buildToolsVersion
+                
+                defaultConfig {
+                    minSdkVersion rootProject.ext.minSdkVersion
+                    targetSdkVersion rootProject.ext.targetSdkVersion
+                }
+                
+                compileOptions {
+                    sourceCompatibility JavaVersion.VERSION_17
+                    targetCompatibility JavaVersion.VERSION_17
+                }
+                
+                kotlinOptions {
+                    jvmTarget = '17'
+                    apiVersion = "1.7"
+                    languageVersion = "1.7"
+                }
+            }
+        }
+    }
+}
